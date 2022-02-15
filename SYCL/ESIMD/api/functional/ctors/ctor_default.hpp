@@ -85,13 +85,15 @@ template <typename DataT, typename SizeT, typename TestCaseT> struct run_test {
 
     shared_vector<DataT> result(NumElems, shared_allocator<DataT>(queue));
 
-    queue.submit([&](sycl::handler &cgh) {
-      DataT *const out = result.data();
-      cgh.single_task<Kernel<DataT, NumElems, TestCaseT>>(
-          [=]() SYCL_ESIMD_KERNEL {
-            TestCaseT::template call_simd_ctor<DataT, NumElems>(out);
-          });
-    }).wait_and_throw();
+    queue
+        .submit([&](sycl::handler &cgh) {
+          DataT *const out = result.data();
+          cgh.single_task<Kernel<DataT, NumElems, TestCaseT>>(
+              [=]() SYCL_ESIMD_KERNEL {
+                TestCaseT::template call_simd_ctor<DataT, NumElems>(out);
+              });
+        })
+        .wait_and_throw();
 
     for (size_t i = 0; i < result.size(); ++i) {
       if (result[i] != default_val) {
