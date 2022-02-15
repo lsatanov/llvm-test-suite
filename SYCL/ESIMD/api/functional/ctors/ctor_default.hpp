@@ -91,7 +91,7 @@ template <typename DataT, typename SizeT, typename TestCaseT> struct run_test {
           [=]() SYCL_ESIMD_KERNEL {
             TestCaseT::template call_simd_ctor<DataT, NumElems>(out);
           });
-    });
+    }).wait_and_throw();
 
     for (size_t i = 0; i < result.size(); ++i) {
       if (result[i] != default_val) {
