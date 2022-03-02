@@ -16,6 +16,7 @@
 #include <chrono>
 #include <cstring>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <string>
@@ -99,26 +100,73 @@ bool write_binary_file(const char *fname, const std::vector<T> &vec,
 }
 
 template <typename T>
-bool cmp_binary_files(const char *fname1, const char *fname2, T tolerance) {
+bool cmp_binary_files(const char *fname1, const char *fname2, const T tolerance,
+                      const double toleratedMismatchRate = 0,
+                      const int mismatchReportThrottleLimit = 5) {
+
+  if (toleratedMismatchRate) {
+    if (toleratedMismatchRate >= 1 || toleratedMismatchRate < 0) {
+      std::cerr << "Tolerated mismatch rate (" << toleratedMismatchRate
+                << ") must be set within [0, 1) range" << std::endl;
+      return false;
+    }
+
+    std::cerr << "Tolerated mismatch rate set to " << toleratedMismatchRate
+              << std::endl;
+  }
+
   const auto vec1 = read_binary_file<T>(fname1);
   const auto vec2 = read_binary_file<T>(fname2);
+
   if (vec1.size() != vec2.size()) {
     std::cerr << fname1 << " size is " << vec1.size();
     std::cerr << " whereas " << fname2 << " size is " << vec2.size()
               << std::endl;
     return false;
   }
-  for (size_t i = 0; i < vec1.size(); i++) {
+
+  double totalMismatches = 0;
+  const double size = vec1.size();
+  for (size_t i = 0; i < size; i++) {
     if (abs(vec1[i] - vec2[i]) > tolerance) {
-      std::cerr << "Mismatch at " << i << ' ';
-      if (sizeof(T) == 1) {
-        std::cerr << (int)vec1[i] << " vs " << (int)vec2[i] << std::endl;
-      } else {
-        std::cerr << vec1[i] << " vs " << vec2[i] << std::endl;
+      if (!toleratedMismatchRate ||
+          (totalMismatches < mismatchReportThrottleLimit)) {
+
+        std::cerr << "Mismatch at " << i << ' ';
+        if (sizeof(T) == 1) {
+          std::cerr << (int)vec1[i] << " vs " << (int)vec2[i];
+        } else {
+          std::cerr << vec1[i] << " vs " << vec2[i];
+        }
+
+        if (!toleratedMismatchRate) {
+          std::cerr << std::endl;
+          return false;
+        } else {
+          std::cerr << ". Current mismatch rate: " << std::setprecision(8)
+                    << std::fixed << totalMismatches / size << std::endl;
+        }
+
+      } else if (totalMismatches == mismatchReportThrottleLimit) {
+        std::cerr << "Mismatch output throttled ... " << std::endl;
       }
-      return false;
+
+      totalMismatches++;
     }
   }
+
+  if (totalMismatches) {
+    const auto totalMismatchRate = totalMismatches / size;
+    if (totalMismatchRate > toleratedMismatchRate) {
+      std::cerr << "Mismatch rate of " << totalMismatchRate
+                << " has exceeded the tolerated amount of "
+                << toleratedMismatchRate << std::endl;
+      return false;
+    }
+
+    std::cerr << "Total mismatch rate is " << totalMismatchRate << std::endl;
+  }
+
   return true;
 }
 
