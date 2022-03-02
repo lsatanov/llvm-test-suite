@@ -99,7 +99,8 @@ bool write_binary_file(const char *fname, const std::vector<T> &vec,
 }
 
 template <typename T>
-bool cmp_binary_files(const char *fname1, const char *fname2, T tolerance) {
+bool cmp_binary_files(const char *fname1, const char *fname2, const T tolerance,
+                      const double toleratedErrorRate = 0) {
   const auto vec1 = read_binary_file<T>(fname1);
   const auto vec2 = read_binary_file<T>(fname2);
   if (vec1.size() != vec2.size()) {
@@ -108,17 +109,33 @@ bool cmp_binary_files(const char *fname1, const char *fname2, T tolerance) {
               << std::endl;
     return false;
   }
+
+  double totalErrors = 0;
   for (size_t i = 0; i < vec1.size(); i++) {
     if (abs(vec1[i] - vec2[i]) > tolerance) {
       std::cerr << "Mismatch at " << i << ' ';
       if (sizeof(T) == 1) {
-        std::cerr << (int)vec1[i] << " vs " << (int)vec2[i] << std::endl;
+        std::cerr << (int)vec1[i] << " vs " << (int)vec2[i];
       } else {
-        std::cerr << vec1[i] << " vs " << vec2[i] << std::endl;
+        std::cerr << vec1[i] << " vs " << vec2[i];
       }
-      return false;
+      if (!toleratedErrorRate)
+        return false;
+      else
+        std::cerr << ". Current error rate: " << totalErrors / vec1.size()
+                  << std::endl;
+      totalErrors++;
+      std::cerr << std::endl;
     }
   }
+
+  const auto totalErrorRate = totalErrors / vec1.size();
+  if (totalErrorRate > toleratedErrorRate) {
+    std::cerr << "Tolerated error rate of " << totalErrorRate
+              << " has exceeded the expected amount of " << toleratedErrorRate
+              << std::endl;
+  }
+
   return true;
 }
 
