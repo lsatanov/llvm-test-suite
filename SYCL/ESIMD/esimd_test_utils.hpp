@@ -126,7 +126,7 @@ bool cmp_binary_files(const char *fname1, const char *fname2, const T tolerance,
   }
 
   double totalMismatches = 0;
-  const double size = vec1.size();
+  const size_t size = vec1.size();
   for (size_t i = 0; i < size; i++) {
     if (abs(vec1[i] - vec2[i]) > tolerance) {
       if (!toleratedMismatchRate ||
