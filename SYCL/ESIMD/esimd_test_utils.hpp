@@ -130,8 +130,7 @@ bool cmp_binary_files(const char *fname1, const char *fname2,
   const size_t size = vec1.size();
   for (size_t i = 0; i < size; i++) {
     if (abs(vec1[i] - vec2[i]) > tolerance) {
-      if (!mismatchRateTolerance ||
-          (totalMismatches < mismatchReportLimit)) {
+      if (!mismatchRateTolerance || (totalMismatches < mismatchReportLimit)) {
 
         std::cerr << "Mismatch at " << i << ' ';
         if (sizeof(T) == 1) {
