@@ -100,18 +100,19 @@ bool write_binary_file(const char *fname, const std::vector<T> &vec,
 }
 
 template <typename T>
-bool cmp_binary_files(const char *fname1, const char *fname2, const T tolerance,
-                      const double toleratedMismatchRate = 0,
-                      const int mismatchReportThrottleLimit = 5) {
+bool cmp_binary_files(const char *fname1, const char *fname2,
+                      const T tolerance = 0,
+                      const double mismatchRateTolerance = 0,
+                      const int mismatchReportLimit = 9) {
 
-  if (toleratedMismatchRate) {
-    if (toleratedMismatchRate >= 1 || toleratedMismatchRate < 0) {
-      std::cerr << "Tolerated mismatch rate (" << toleratedMismatchRate
+  if (mismatchRateTolerance) {
+    if (mismatchRateTolerance >= 1 || mismatchRateTolerance < 0) {
+      std::cerr << "Tolerated mismatch rate (" << mismatchRateTolerance
                 << ") must be set within [0, 1) range" << std::endl;
       return false;
     }
 
-    std::cerr << "Tolerated mismatch rate set to " << toleratedMismatchRate
+    std::cerr << "Tolerated mismatch rate set to " << mismatchRateTolerance
               << std::endl;
   }
 
@@ -126,11 +127,11 @@ bool cmp_binary_files(const char *fname1, const char *fname2, const T tolerance,
   }
 
   double totalMismatches = 0;
-  const double size = vec1.size();
+  const size_t size = vec1.size();
   for (size_t i = 0; i < size; i++) {
     if (abs(vec1[i] - vec2[i]) > tolerance) {
-      if (!toleratedMismatchRate ||
-          (totalMismatches < mismatchReportThrottleLimit)) {
+      if (!mismatchRateTolerance ||
+          (totalMismatches < mismatchReportLimit)) {
 
         std::cerr << "Mismatch at " << i << ' ';
         if (sizeof(T) == 1) {
@@ -139,7 +140,7 @@ bool cmp_binary_files(const char *fname1, const char *fname2, const T tolerance,
           std::cerr << vec1[i] << " vs " << vec2[i];
         }
 
-        if (!toleratedMismatchRate) {
+        if (!mismatchRateTolerance) {
           std::cerr << std::endl;
           return false;
         } else {
@@ -147,8 +148,8 @@ bool cmp_binary_files(const char *fname1, const char *fname2, const T tolerance,
                     << std::fixed << totalMismatches / size << std::endl;
         }
 
-      } else if (totalMismatches == mismatchReportThrottleLimit) {
-        std::cerr << "Mismatch output throttled ... " << std::endl;
+      } else if (totalMismatches == mismatchReportLimit) {
+        std::cerr << "Mismatch output stopped." << std::endl;
       }
 
       totalMismatches++;
@@ -157,10 +158,10 @@ bool cmp_binary_files(const char *fname1, const char *fname2, const T tolerance,
 
   if (totalMismatches) {
     const auto totalMismatchRate = totalMismatches / size;
-    if (totalMismatchRate > toleratedMismatchRate) {
+    if (totalMismatchRate > mismatchRateTolerance) {
       std::cerr << "Mismatch rate of " << totalMismatchRate
                 << " has exceeded the tolerated amount of "
-                << toleratedMismatchRate << std::endl;
+                << mismatchRateTolerance << std::endl;
       return false;
     }
 
