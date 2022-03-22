@@ -131,7 +131,7 @@ bool cmp_binary_files(const char *testOutFile, const char *referenceFile,
 
   size_t totalMismatches = 0;
   const size_t size = testVec.size();
-  double maxRelativeDiff = 0, curRelativeDiff = 0;
+  double maxRelativeDiff = 0;
   for (size_t i = 0; i < size; i++) {
     const auto diff = abs(testVec[i] - referenceVec[i]);
     if (diff > tolerance) {
@@ -144,8 +144,8 @@ bool cmp_binary_files(const char *testOutFile, const char *referenceFile,
           std::cerr << testVec[i] << " vs " << referenceVec[i];
         }
 
-        curRelativeDiff = static_cast<double>(diff) / referenceVec[i];
-        maxRelativeDiff = std::max(maxRelativeDiff, curRelativeDiff);
+        maxRelativeDiff = std::max(maxRelativeDiff,
+                                   static_cast<double>(diff) / referenceVec[i]);
 
         if (!mismatchRateTolerance) {
           std::cerr << std::endl;
