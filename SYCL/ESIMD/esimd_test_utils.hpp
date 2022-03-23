@@ -132,6 +132,7 @@ bool cmp_binary_files(const char *testOutFile, const char *referenceFile,
   size_t totalMismatches = 0;
   const size_t size = testVec.size();
   double maxRelativeDiff = 0;
+  bool status = true;
   for (size_t i = 0; i < size; i++) {
     const auto diff = abs(testVec[i] - referenceVec[i]);
     if (diff > tolerance) {
@@ -149,7 +150,8 @@ bool cmp_binary_files(const char *testOutFile, const char *referenceFile,
 
         if (!mismatchRateTolerance) {
           std::cerr << std::endl;
-          return false;
+          status = false;
+          break;
         } else {
           std::cerr << ". Current mismatch rate: " << std::setprecision(8)
                     << std::fixed << static_cast<double>(totalMismatches) / size
@@ -169,9 +171,8 @@ bool cmp_binary_files(const char *testOutFile, const char *referenceFile,
     if (totalMismatchRate > mismatchRateTolerance) {
       std::cerr << "Mismatch rate of " << totalMismatchRate
                 << " has exceeded the tolerated amount of "
-                << mismatchRateTolerance << ". Max met relative delta is "
-                << maxRelativeDiff << std::endl;
-      return false;
+                << mismatchRateTolerance << std::endl;
+      status = false;
     }
 
     std::cerr << "Total mismatch rate is " << totalMismatchRate
@@ -179,7 +180,7 @@ bool cmp_binary_files(const char *testOutFile, const char *referenceFile,
               << std::endl;
   }
 
-  return true;
+  return status;
 }
 
 // dump every element of sequence [first, last) to std::cout
